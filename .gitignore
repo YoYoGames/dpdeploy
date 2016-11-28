@@ -2,3 +2,5 @@ dpdeploy/bin/
 dpdeploy/obj/Debug/DesignTimeResolveAssemblyReferencesInput.cache
 dpdeploy/obj/
 dpdeploy.v11.suo
+.vs/
+*.user
