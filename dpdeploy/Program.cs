@@ -353,6 +353,7 @@ namespace dpdeploy
             try
             {
                 HttpWebRequest request = WebRequest.Create(_uri) as HttpWebRequest;
+                request.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => { return true; };
                 if (Credentials != null)
                 {
                     CredentialCache mycache = new CredentialCache();
@@ -420,6 +421,7 @@ namespace dpdeploy
                 } // end if
                 _uri = _uri + "?" + postData.ToString();
                 HttpWebRequest request = WebRequest.Create(_uri) as HttpWebRequest;
+                request.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => { return true; };
                 if (Credentials != null)
                 {
                     CredentialCache mycache = new CredentialCache();
@@ -495,6 +497,7 @@ namespace dpdeploy
                 } // end if
                 _uri = _uri + "?" + postData.ToString();
                 HttpWebRequest request = WebRequest.Create(_uri) as HttpWebRequest;
+                request.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => { return true; };
                 if (Credentials != null)
                 {
                     CredentialCache mycache = new CredentialCache();
@@ -567,43 +570,47 @@ namespace dpdeploy
 
             try
             {
-                using ( var handler = new HttpClientHandler() { CookieContainer = CookieContainer })
-                using (var client = new HttpClient(handler))
+                using (var handler = new WebRequestHandler() { CookieContainer = CookieContainer, })
                 {
-                    client.DefaultRequestHeaders.ExpectContinue = false;
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", Username, Password))));
-                    client.DefaultRequestHeaders.Accept.Clear();
-                    client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
-                    if (!string.IsNullOrEmpty(CSRF))
-                        client.DefaultRequestHeaders.Add("X-CSRF-Token", CSRF);
-                    if (!string.IsNullOrEmpty(WMID))
-                        client.DefaultRequestHeaders.Add("WMID", WMID);
-                    using (var content = new MultipartFormDataContent())
+                    handler.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => { return true; };
+                    using (var client = new HttpClient(handler))
                     {
-                        foreach (string f in _files)
+                        client.DefaultRequestHeaders.ExpectContinue = false;
+                        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(Encoding.ASCII.GetBytes(string.Format("{0}:{1}", Username, Password))));
+                        client.DefaultRequestHeaders.Accept.Clear();
+                        client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
+                        if (!string.IsNullOrEmpty(CSRF))
+                            client.DefaultRequestHeaders.Add("X-CSRF-Token", CSRF);
+                        if (!string.IsNullOrEmpty(WMID))
+                            client.DefaultRequestHeaders.Add("WMID", WMID);
+                        using (var content = new MultipartFormDataContent())
                         {
-                            var streamContent = new StreamContent(new StreamReader(f).BaseStream, 1024);
-                            FileInfo fI = new FileInfo(f);
-                            streamContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data") { 
-                                Name = "\"" + fI.Name + "\"", 
-                                FileName = "\"" + fI.Name + "\"" 
-                            };
-                            streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-                            content.Add(streamContent);
-                        } // end foreach
+                            foreach (string f in _files)
+                            {
+                                var streamContent = new StreamContent(new StreamReader(f).BaseStream, 1024);
+                                FileInfo fI = new FileInfo(f);
+                                streamContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data")
+                                {
+                                    Name = "\"" + fI.Name + "\"",
+                                    FileName = "\"" + fI.Name + "\""
+                                };
+                                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                                content.Add(streamContent);
+                            } // end foreach
 
-                        // this is the magic bit of code to fix sending the multipart form data properly...
-                        var boundaryValue = content.Headers.ContentType.Parameters.FirstOrDefault(p => p.Name == "boundary");
-                        boundaryValue.Value = boundaryValue.Value.Replace("\"", String.Empty); 
+                            // this is the magic bit of code to fix sending the multipart form data properly...
+                            var boundaryValue = content.Headers.ContentType.Parameters.FirstOrDefault(p => p.Name == "boundary");
+                            boundaryValue.Value = boundaryValue.Value.Replace("\"", String.Empty);
 
-                        Task<HttpResponseMessage> tmessage = client.PostAsync( _uri, content);
-                        tmessage.Wait();
-                        HttpResponseMessage message = tmessage.Result;
-                        message.EnsureSuccessStatusCode();
-                        var input = message.Content.ReadAsStringAsync();
-                        responseString = input.Result;
+                            Task<HttpResponseMessage> tmessage = client.PostAsync(_uri, content);
+                            tmessage.Wait();
+                            HttpResponseMessage message = tmessage.Result;
+                            message.EnsureSuccessStatusCode();
+                            var input = message.Content.ReadAsStringAsync();
+                            responseString = input.Result;
+                        } // end using
                     } // end using
-                } // end using
+                }
             } // end try
             catch (Exception _ex)
             {
