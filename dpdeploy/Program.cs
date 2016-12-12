@@ -122,6 +122,8 @@ namespace dpdeploy
                 if (!string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(Password))
                 {
                     Credentials = new NetworkCredential(Username, Password);
+                    string uri = string.Format("{0}://{1}/", HTTP, Hostname);
+                    LoadCookies(CookieFile, uri);
                 } // end if
                 else
                 {
@@ -238,7 +240,7 @@ namespace dpdeploy
 
                             if (fShowHelp)
                             {
-                                Console.WriteLine("install <package-full-name>");
+                                Console.WriteLine("uninstall <package-full-name>");
                             } // end else
                         } // end block
                         break;
@@ -251,7 +253,7 @@ namespace dpdeploy
                                 fShowHelp = true;
                             } // end if
                             else
-                                if (args.Count == 3)
+                            if (args.Count == 3)
                             {
                                 string uri = string.Format("{0}://{1}/api/taskmanager/app", HTTP, Hostname);
                                 Dictionary<string, string> aa = new Dictionary<string, string>();
