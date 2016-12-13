@@ -69,9 +69,15 @@ namespace dpdeploy
 
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine(CSRF);
-                sb.AppendLine(WMID);
-                File.WriteAllText(_filename, sb.ToString());
+                if (!string.IsNullOrEmpty(CSRF))
+                    sb.AppendLine(CSRF);
+                if (!string.IsNullOrEmpty(WMID))
+                    sb.AppendLine(WMID);
+                string file = sb.ToString();
+                if (!string.IsNullOrEmpty(file))
+                {
+                    File.WriteAllText(_filename, sb.ToString());
+                } // end if
             } // end if
 
         } // end SaveCookies
@@ -79,6 +85,8 @@ namespace dpdeploy
         static void LoadCookies(string _filename, string _uri)
         {
             Uri uri = new Uri(_uri);
+            string clean = uri.GetComponents(UriComponents.AbsoluteUri & ~UriComponents.Port, UriFormat.UriEscaped);
+            Uri cleanUri = new Uri(clean);
             if (File.Exists(_filename))
             {
                 string[] lines = File.ReadAllLines(_filename);
@@ -87,8 +95,10 @@ namespace dpdeploy
                 if (lines.Length >= 2)
                     WMID = lines[1];
 
-                CookieContainer.Add(uri, new Cookie("WMID", WMID));
-                CookieContainer.Add(uri, new Cookie("CSRF-Token", CSRF));
+                if (!string.IsNullOrEmpty(WMID))
+                    CookieContainer.Add(cleanUri, new Cookie("WMID", WMID));
+                if (!string.IsNullOrEmpty(CSRF))
+                    CookieContainer.Add(cleanUri, new Cookie("CSRF-Token", CSRF));
 
             } // end if
         } // end LoadCookies
@@ -332,10 +342,6 @@ namespace dpdeploy
                 } // end switch
 
 
-                {
-                    string uri = string.Format("{0}://{1}/", HTTP, Hostname);
-                    SaveCookies(CookieFile, uri, CookieContainer);
-                } // end block
             } // end else
         }
 
@@ -359,6 +365,9 @@ namespace dpdeploy
                     CredentialCache mycache = new CredentialCache();
                     mycache.Add(request.RequestUri, "Basic", Credentials);
                     request.Credentials = mycache;
+
+                    if (!string.IsNullOrEmpty(CSRF))
+                        request.Headers.Add("X-CSRF-Token", CSRF);
                 } // end if
                 else
                 {
@@ -381,6 +390,8 @@ namespace dpdeploy
                     } // end while
                 } // end using
                 responseString = Encoding.UTF8.GetString(ms.ToArray());
+
+                SaveCookies(CookieFile, _uri, CookieContainer);
             }
             catch (WebException _ex)
             {
@@ -427,7 +438,9 @@ namespace dpdeploy
                     CredentialCache mycache = new CredentialCache();
                     mycache.Add(request.RequestUri, "Basic", Credentials);
                     request.Credentials = mycache;
-                    request.UseDefaultCredentials = false;
+
+                    if (!string.IsNullOrEmpty(CSRF))
+                        request.Headers.Add("X-CSRF-Token", CSRF);
                 } // end if
                 else
                 {
@@ -458,6 +471,8 @@ namespace dpdeploy
                     } // end while
                 } // end using
                 responseString = Encoding.UTF8.GetString(ms.ToArray());
+
+                SaveCookies(CookieFile, _uri, CookieContainer);
             }
             catch (WebException _ex)
             {
@@ -503,6 +518,8 @@ namespace dpdeploy
                     CredentialCache mycache = new CredentialCache();
                     mycache.Add(request.RequestUri, "Basic", Credentials);
                     request.Credentials = mycache;
+                    if (!string.IsNullOrEmpty(CSRF))
+                        request.Headers.Add("X-CSRF-Token", CSRF);
                 } //end if
                 else
                 {
@@ -531,6 +548,8 @@ namespace dpdeploy
                     } // end while
                 } // end using
                 responseString = Encoding.UTF8.GetString(ms.ToArray());
+
+                SaveCookies(CookieFile, _uri, CookieContainer);
             }
             catch (WebException _ex)
             {
@@ -581,8 +600,11 @@ namespace dpdeploy
                         client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("*/*"));
                         if (!string.IsNullOrEmpty(CSRF))
                             client.DefaultRequestHeaders.Add("X-CSRF-Token", CSRF);
-                        if (!string.IsNullOrEmpty(WMID))
-                            client.DefaultRequestHeaders.Add("WMID", WMID);
+                        if (Credentials == null)
+                        {
+                            if (!string.IsNullOrEmpty(WMID))
+                                client.DefaultRequestHeaders.Add("WMID", WMID);
+                        } // end if
                         using (var content = new MultipartFormDataContent())
                         {
                             foreach (string f in _files)
