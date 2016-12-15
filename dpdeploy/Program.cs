@@ -203,8 +203,7 @@ namespace dpdeploy
                             {
                                 fShowHelp = true;
                             } // end if
-                            else
-                                if (args.Count == 2)
+                            else if (args.Count >= 2)
                             {
                                 string uri = string.Format("{0}://{1}/api/app/packagemanager/package", HTTP, Hostname);
                                 Dictionary<string, string> aa = new Dictionary<string, string>();
