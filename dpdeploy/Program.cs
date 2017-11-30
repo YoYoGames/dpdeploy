@@ -109,6 +109,7 @@ namespace dpdeploy
         /// <param name="_args">command line arguments</param>
         static void Main(string[] _args)
         {
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
             HTTP = "http";
             CookieContainer = new CookieContainer();
             CookieFile = Path.Combine(Path.GetTempPath(), "dpdeploy-container");
