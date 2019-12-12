@@ -110,6 +110,9 @@ namespace dpdeploy
         static void Main(string[] _args)
         {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
+
+            ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls11;
+
             HTTP = "http";
             CookieContainer = new CookieContainer();
             CookieFile = Path.Combine(Path.GetTempPath(), "dpdeploy-container");
