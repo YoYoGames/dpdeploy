@@ -109,6 +109,8 @@ namespace dpdeploy
         /// <param name="_args">command line arguments</param>
         static void Main(string[] _args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
+            
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Ssl3 | SecurityProtocolType.Tls;
 
             ServicePointManager.SecurityProtocol |= System.Net.SecurityProtocolType.Tls12 | System.Net.SecurityProtocolType.Tls11;
